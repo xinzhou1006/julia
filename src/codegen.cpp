@@ -1774,7 +1774,13 @@ static jl_value_t *static_apply_type(jl_codectx_t &ctx, const jl_cgval_t *args, 
     size_t last_age = jl_get_ptls_states()->world_age;
     // call apply_type, but ignore errors. we know that will work in world 1.
     jl_get_ptls_states()->world_age = 1;
-    jl_value_t *result = jl_apply_with_saved_exception_state(v, nargs, 1);
+    jl_value_t *result;
+    JL_TRY {
+        result = jl_apply(v, nargs);
+    }
+    JL_CATCH {
+        result = NULL;
+    }
     jl_get_ptls_states()->world_age = last_age;
     return result;
 }
@@ -1856,7 +1862,13 @@ static jl_value_t *static_eval(jl_codectx_t &ctx, jl_value_t *ex, int sparams=tr
                     size_t last_age = jl_get_ptls_states()->world_age;
                     // here we know we're calling specific builtin functions that work in world 1.
                     jl_get_ptls_states()->world_age = 1;
-                    jl_value_t *result = jl_apply_with_saved_exception_state(v, n+1, 1);
+                    jl_value_t *result;
+                    JL_TRY {
+                        result = jl_apply(v, n+1);
+                    }
+                    JL_CATCH {
+                        result = NULL;
+                    }
                     jl_get_ptls_states()->world_age = last_age;
                     JL_GC_POP();
                     return result;

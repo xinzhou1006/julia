@@ -302,24 +302,6 @@ JL_DLLEXPORT void jl_restore_exc_stack(size_t state)
     }
 }
 
-JL_DLLEXPORT jl_value_t *jl_apply_with_saved_exception_state(jl_value_t **args, uint32_t nargs, int drop_exceptions)
-{
-    jl_value_t *v;
-    JL_TRY {
-        v = jl_apply(args, nargs);
-    }
-    JL_CATCH {
-        if (!drop_exceptions) {
-            jl_printf(JL_STDERR, "Internal error: encountered unexpected error in runtime:\n");
-            jl_static_show(JL_STDERR, jl_current_exception());
-            jl_printf(JL_STDERR, "\n");
-            jlbacktrace(); // written to STDERR_FILENO
-        }
-        v = NULL;
-    }
-    return v;
-}
-
 void jl_copy_exc_stack(jl_exc_stack_t *dest, jl_exc_stack_t *src)
 {
     assert(dest->reserved_size >= src->top);
