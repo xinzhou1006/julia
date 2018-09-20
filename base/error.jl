@@ -92,16 +92,20 @@ function catch_backtrace()
 end
 
 """
-    catch_stack(; [inclue_bt=true])
+    catch_stack(task=current_task(); [inclue_bt=true])
 
 Get the stack of exceptions currently being handled. For nested catch blocks
-there may be more than one current exception in which case the most recent
-exception is last in the stack. The stack is returned as a Vector of
-`(exception,backtrace)` pairs, or a Vector of exceptions only if `include_bt`
-is false.
+there may be more than one current exception in which case the most recently
+thrown exception is last in the stack. The stack is returned as a Vector of
+`(exception,backtrace)` pairs, or a Vector of exceptions if `include_bt` is
+false.
+
+Explicitly passing `task` will return the current exception stack on an
+arbitrary task. This is useful for inspecting tasks which have failed due to
+uncaught exceptions.
 """
-function catch_stack(; include_bt=true)
-    raw = ccall(:jl_get_exc_stack, Any, (Cint,Cint), include_bt, typemax(Cint))
+function catch_stack(task=current_task(); include_bt=true)
+    raw = ccall(:jl_get_exc_stack, Any, (Any,Cint,Cint), task, include_bt, typemax(Cint))
     formatted = Any[]
     stride = include_bt ? 3 : 1
     for i = reverse(1:stride:length(raw))

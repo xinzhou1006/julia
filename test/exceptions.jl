@@ -111,7 +111,7 @@ end
     @test length(catch_stack()) == 0
 end
 
-@testset "Exception stacks and Task switching" begin
+@testset "Exception stacks and Tasks" begin
     # See #12485
     try
         error("A")
@@ -174,6 +174,16 @@ end
         @test bt == catch_backtrace()
     end
     @test length(catch_stack()) == 0
+    # Exception stacks on other tasks
+    t = @task try
+        error("A")
+    catch
+        error("B")
+    end
+    yield(t)
+    @test t.state == :failed
+    @test t.result == ErrorException("B")
+    @test catch_stack(t, include_bt=false) == [ErrorException("A"), ErrorException("B")]
 end
 
 @testset "rethrow" begin
