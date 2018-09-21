@@ -336,6 +336,10 @@ end
 @propagate_inbounds iterate(z::Zip) = _zip_iterate_all(z.is, map(_ -> (), z.is))
 @propagate_inbounds iterate(z::Zip, ss) = _zip_iterate_all(z.is, map(tuple, ss))
 
+# This first queries isdone from every iterator. If any gives true, it immediately returns
+# nothing. It then iterates all those where isdone returned missing, afterwards all those
+# it returned false, again terminating immediately if any iterator is exhausted. Finally,
+# the results are interleaved appropriately.
 @propagate_inbounds function _zip_iterate_all(is, ss)
     ds = _zip_isdone(is, ss)
     any(map(d -> d === true, ds)) === true && return nothing
@@ -369,7 +373,7 @@ _zip_iterate_interleave(::Tuple{}, ::Tuple{}, ::Tuple{}) = ((), ())
 
 function _zip_isdone(is, ss)
     d = isdone(is[1], ss[1]...)
-    d === true && map(_ -> true, is)
+    d === true && map(_ -> true, is) # no need to check the remaining ones, but fill with trues for type stability
     return (d, _zip_isdone(tail(is), tail(ss))...)
 end
 _zip_isdone(::Tuple{}, ::Tuple{}) = ()
